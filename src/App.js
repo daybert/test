@@ -4,7 +4,7 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Button, InputGroup, FormControl } from "react-bootstrap";
 import "./App.css";
-import { FileInput } from "grommet";
+import { FileInput, Meter } from "grommet";
 import styled from "styled-components";
 
 const Title = styled.h1`
@@ -17,7 +17,8 @@ export default class App extends Component {
   state = {
     selectedFile: null,
     sendingRequest: false,
-    percentage: 25,
+    //This value most come from de Api when
+    percentage: 0,
     url: null,
     buttonText: "Send to Backend",
   };
@@ -35,7 +36,9 @@ export default class App extends Component {
   onFileUpload = async () => {
     if (this.state.selectedFile) {
       this.setState({ buttonText: "Sending ..." });
-
+      while (this.state.buttonText === "Sending ...") {
+        this.setState({ percentage: this.state.percentage + 1 });
+      }
       // Create an object of formData
       const formData = new FormData();
 
@@ -45,18 +48,20 @@ export default class App extends Component {
         this.state.selectedFile,
         this.state.selectedFile.name
       );
-      try {
-        await axios.post("api/uploadfile", formData);
-      } catch (err) {
-        throw new Error("Error sending video0000");
-      }
 
-      this.setState({ buttonText: "Send to Backend" });
+      await axios
+        .post("api/uploadfile", formData)
+        .then((res) => {
+          this.setState({ buttonText: "Send to Backend" });
+          alert("This video was send it correctly");
+        })
+        .catch((error) => {
+          throw new Error("Error sending video");
+        });
     } else {
-      alert("Please select a file before!");
+      alert("Please select a file to send before!");
     }
   };
-
   // File content to be displayed after
   // file upload is complete
   fileData = () => {
@@ -76,10 +81,7 @@ export default class App extends Component {
     } else {
       return (
         <div>
-          <VideoUpload
-            value={this.state.url}
-            percentage={this.state.percentage}
-          />
+          <VideoUpload value={this.state.url} />
         </div>
       );
     }
@@ -97,6 +99,19 @@ export default class App extends Component {
             {this.state.buttonText}
           </Button>
           <br />
+          <br />
+          {this.state.buttonText === "Sending ..." ? (
+            <Meter
+              values={[
+                {
+                  value: this.state.percentage,
+                  label: "sixty",
+                },
+              ]}
+              aria-label="meter"
+            />
+          ) : null}
+
           <br />
           <br />
           <InputGroup className="mb-3" onChange={this.hundleInput}>
